@@ -93,6 +93,7 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
 
     @PostConstruct
     public void init() {
+        ShiroPac4jConfigurationAdvice configurationAdvice = this.getConfigurationAdvice();
         this.shiroPac4jConfigHolder = new ShiroPac4jConfigHolder();
         // 1. 签名bean
         SecretSignatureConfiguration secretSignatureConfiguration = new SecretSignatureConfiguration(this.shiroProperties.getJwtSecret());
@@ -111,14 +112,14 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
         SessionTokenStore sessionTokenStore = new DefaultSessionTokenStore(config, this.redisCache, this.shiroProperties.getSessionTimeout());
         this.shiroPac4jConfigHolder.setSessionTokenStore(sessionTokenStore);
         // 5. Jwt生产bean
-        JwtGenerator<CommonProfile> jwtGenerator = this.getConfigurationAdvice().getJwtGenerator(this.shiroPac4jConfigHolder);
+        JwtGenerator<CommonProfile> jwtGenerator = configurationAdvice.getJwtGenerator(this.shiroPac4jConfigHolder);
         this.shiroPac4jConfigHolder.setJwtGenerator(jwtGenerator);
         // 6. jwt验证bean
-        JwtAuthenticator jwtAuthenticator = this.getConfigurationAdvice().getJwtAuthenticator(this.shiroPac4jConfigHolder);
+        JwtAuthenticator jwtAuthenticator = configurationAdvice.getJwtAuthenticator(this.shiroPac4jConfigHolder);
         this.shiroPac4jConfigHolder.setJwtAuthenticator(jwtAuthenticator);
         // 7. pac4j client
         Clients clients = new Clients();
-        clients.setClients(this.getConfigurationAdvice().getClients(this.shiroPac4jConfigHolder));
+        clients.setClients(configurationAdvice.getClients(this.shiroPac4jConfigHolder));
         config.setClients(clients);
         this.shiroPac4jConfigHolder.setClients(clients);
         // 8. session dao bean
@@ -151,23 +152,23 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
         Map<String, Filter> filters = new HashMap<>();
         filters.put(AuthcFilter.name, new AuthcFilter());
         filters.put(ShiroOriginFilter.name, new ShiroOriginFilter());
-        Pac4jSecurityFilter securityFilter = new Pac4jSecurityFilter(sessionTokenStore);
+        Pac4jSecurityFilter securityFilter = new Pac4jSecurityFilter(configurationAdvice.getSecurityLogic(this.shiroPac4jConfigHolder));
         securityFilter.setConfig(config);
         filters.put(Pac4jSecurityFilter.name, securityFilter);
         CallbackFilter callbackFilter = new CallbackFilter();
         callbackFilter.setConfig(config);
         callbackFilter.setSaveInSession(true);
         callbackFilter.setDefaultUrl(this.shiroProperties.getLoginDefaultUrl());
-        callbackFilter.setCallbackLogic(this.getConfigurationAdvice().getCallbackLogic(this.shiroPac4jConfigHolder));
+        callbackFilter.setCallbackLogic(configurationAdvice.getCallbackLogic(this.shiroPac4jConfigHolder));
         filters.put("callback", callbackFilter);
         LogoutFilter logoutFilter = new LogoutFilter();
         logoutFilter.setConfig(config);
         logoutFilter.setDefaultUrl(this.shiroProperties.getLogoutDefaultUrl());
-        logoutFilter.setLogoutLogic(this.getConfigurationAdvice().getLogoutLogic(this.shiroPac4jConfigHolder));
+        logoutFilter.setLogoutLogic(configurationAdvice.getLogoutLogic(this.shiroPac4jConfigHolder));
         filters.put("logout", logoutFilter);
         filters.put(HeartbeatRequestFilter.name, new HeartbeatRequestFilter());
         filters.put(RedirectionFilter.name, new RedirectionFilter(this.shiroProperties));
-        filters.putAll(this.getConfigurationAdvice().getFilter(this.shiroPac4jConfigHolder));
+        filters.putAll(configurationAdvice.getFilter(this.shiroPac4jConfigHolder));
         this.shiroPac4jConfigHolder.setFilters(filters);
         // 14. filter bean
         ShiroFilterFactoryBean shiroFilterFactoryBean = new ShiroFilterFactoryBean();

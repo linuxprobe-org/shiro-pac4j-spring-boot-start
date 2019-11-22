@@ -2,12 +2,14 @@ package org.linuxprobe.shiro.spring.boot.configuration;
 
 import org.linuxprobe.shiro.base.pac4j.engine.DefaultPac4jCallbackLogic;
 import org.linuxprobe.shiro.base.pac4j.engine.DefaultPac4jLogoutLogic;
+import org.linuxprobe.shiro.base.pac4j.engine.DefaultPac4jSecurityLogic;
 import org.linuxprobe.shiro.base.pac4j.jwt.Pac4jJwtAuthenticator;
 import org.linuxprobe.shiro.base.pac4j.jwt.Pac4jJwtGenerator;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.context.J2EContext;
 import org.pac4j.core.engine.CallbackLogic;
 import org.pac4j.core.engine.LogoutLogic;
+import org.pac4j.core.engine.SecurityLogic;
 import org.pac4j.core.profile.CommonProfile;
 import org.pac4j.jwt.credentials.authenticator.JwtAuthenticator;
 
@@ -69,11 +71,20 @@ public interface ShiroPac4jConfigurationAdvice {
 
 
     /**
-     * 自定义oauth2 ajax回调
+     * 自定义oauth2回调
      *
      * @param configHolder shiro pac4j配置
      */
     default CallbackLogic<Object, J2EContext> getCallbackLogic(ShiroPac4jConfigHolder configHolder) {
         return new DefaultPac4jCallbackLogic<>();
+    }
+
+    /**
+     * 自定义安全认证
+     *
+     * @param configHolder shiro pac4j配置
+     */
+    default SecurityLogic<Object, J2EContext> getSecurityLogic(ShiroPac4jConfigHolder configHolder) {
+        return new DefaultPac4jSecurityLogic<>(configHolder.getSessionTokenStore());
     }
 }
