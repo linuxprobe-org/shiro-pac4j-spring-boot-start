@@ -1,4 +1,4 @@
-shiro pac4j base
+shiro pac4j spring boot start
 ```
  <dependency>
     <groupId>org.linuxprobe</groupId>
