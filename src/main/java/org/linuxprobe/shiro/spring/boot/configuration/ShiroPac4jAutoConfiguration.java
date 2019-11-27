@@ -11,10 +11,9 @@ import org.apache.shiro.realm.Realm;
 import org.apache.shiro.session.mgt.SessionManager;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
-import org.apache.shiro.subject.Subject;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.apache.shiro.web.servlet.SimpleCookie;
-import org.linuxprobe.luava.cache.impl.RedisCache;
+import org.linuxprobe.luava.cache.impl.redis.RedisCache;
 import org.linuxprobe.luava.shiro.redis.cache.ShiroRedisCacheManager;
 import org.linuxprobe.luava.shiro.redis.session.ShiroRedisSessionDAO;
 import org.linuxprobe.shiro.base.filter.*;
@@ -49,6 +48,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.Filter;
@@ -59,10 +59,10 @@ import java.util.Map;
 
 @Slf4j
 @Configuration
-@ConditionalOnClass({Subject.class})
-@ConditionalOnBean(value = {RedisCache.class, ClientAuthorizationInfo.class})
+@ConditionalOnClass({ShiroPac4jProperties.class})
+@ConditionalOnBean(value = {ClientAuthorizationInfo.class})
 @EnableConfigurationProperties(ShiroPac4jProperties.class)
-@AutoConfigureAfter({ShiroPac4jProperties.class, RedisCache.class, RedisAutoConfiguration.class})
+@AutoConfigureAfter({ShiroPac4jProperties.class, RedisAutoConfiguration.class})
 public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
     private static Logger logger = LoggerFactory.getLogger(ShiroPac4jAutoConfiguration.class);
     private BeanFactory beanFactory;
@@ -71,8 +71,7 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
     private ClientAuthorizationInfo clientAuthorizationInfo;
     private ShiroPac4jConfigHolder shiroPac4jConfigHolder;
 
-    public ShiroPac4jAutoConfiguration(RedisCache redisCache, ShiroPac4jProperties shiroProperties, ClientAuthorizationInfo clientAuthorizationInfo) {
-        this.redisCache = redisCache;
+    public ShiroPac4jAutoConfiguration(ShiroPac4jProperties shiroProperties, ClientAuthorizationInfo clientAuthorizationInfo) {
         this.shiroProperties = shiroProperties;
         this.clientAuthorizationInfo = clientAuthorizationInfo;
     }
@@ -89,6 +88,8 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
+        RedisTemplate redisTemplate = beanFactory.getBean("redisTemplate", RedisTemplate.class);
+        this.redisCache = new RedisCache(redisTemplate);
     }
 
     @PostConstruct
@@ -183,6 +184,12 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
         shiroFilterFactoryBean.setFilterChainDefinitionMap(this.shiroProperties.getFilterChainDefinitions());
         shiroFilterFactoryBean.setLoginUrl(this.shiroProperties.getLoginUrl());
         this.shiroPac4jConfigHolder.setShiroFilterFactoryBean(shiroFilterFactoryBean);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RedisCache redisCache() {
+        return this.redisCache;
     }
 
     /**
