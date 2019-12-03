@@ -96,6 +96,8 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
     public void init() {
         ShiroPac4jConfigurationAdvice configurationAdvice = this.getConfigurationAdvice();
         this.shiroPac4jConfigHolder = new ShiroPac4jConfigHolder();
+        this.shiroPac4jConfigHolder.setShiroProperties(this.shiroProperties);
+        configurationAdvice.initBefore(this.shiroProperties);
         // 1. 签名bean
         SecretSignatureConfiguration secretSignatureConfiguration = new SecretSignatureConfiguration(this.shiroProperties.getJwtSecret());
         this.shiroPac4jConfigHolder.setSignatureConfiguration(secretSignatureConfiguration);
@@ -138,7 +140,8 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
         // 11. securityManager bean
         DefaultWebSecurityManager securityManager = new DefaultWebSecurityManager();
         List<Realm> realms = new ArrayList<>(3);
-        realms.add(new Pac4jShiroRealm(this.clientAuthorizationInfo));
+        realms.add(new Pac4jShiroRealm(this.clientAuthorizationInfo, this.shiroProperties.getCachePrefix()));
+        realms.addAll(configurationAdvice.getRealms(this.shiroPac4jConfigHolder));
         securityManager.setRealms(realms);
         securityManager.setSessionManager(sessionManager);
         securityManager.setCacheManager(new ShiroRedisCacheManager(this.redisCache));
@@ -151,6 +154,7 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
         this.shiroPac4jConfigHolder.setAuthorizationAttributeSourceAdvisor(authorizationAttributeSourceAdvisor);
         // 13. filter map 自定义shiro拦截器
         Map<String, Filter> filters = new HashMap<>();
+        this.shiroPac4jConfigHolder.setFilters(filters);
         filters.put(AuthcFilter.name, new AuthcFilter());
         filters.put(ShiroOriginFilter.name, new ShiroOriginFilter());
         Pac4jSecurityFilter securityFilter = new Pac4jSecurityFilter(configurationAdvice.getSecurityLogic(this.shiroPac4jConfigHolder));
@@ -170,7 +174,6 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
         filters.put(HeartbeatRequestFilter.name, new HeartbeatRequestFilter());
         filters.put(RedirectionFilter.name, new RedirectionFilter(this.shiroProperties));
         filters.putAll(configurationAdvice.getFilter(this.shiroPac4jConfigHolder));
-        this.shiroPac4jConfigHolder.setFilters(filters);
         // 14. filter bean
         ShiroFilterFactoryBean shiroFilterFactoryBean = new ShiroFilterFactoryBean();
         shiroFilterFactoryBean.setLoginUrl(this.shiroProperties.getLoginUrl());
@@ -184,6 +187,7 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
         shiroFilterFactoryBean.setFilterChainDefinitionMap(this.shiroProperties.getFilterChainDefinitions());
         shiroFilterFactoryBean.setLoginUrl(this.shiroProperties.getLoginUrl());
         this.shiroPac4jConfigHolder.setShiroFilterFactoryBean(shiroFilterFactoryBean);
+        configurationAdvice.initAfter(this.shiroPac4jConfigHolder);
     }
 
     @Bean

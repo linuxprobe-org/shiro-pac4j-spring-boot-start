@@ -38,7 +38,7 @@
 
     <groupId>org.linuxprobe</groupId>
     <artifactId>shiro-pac4j-spring-boot-start</artifactId>
-    <version>0.0.1.RS3</version>
+    <version>0.0.1.RS4</version>
     <packaging>jar</packaging>
     <name>shiro-pac4j-spring-boot-start</name>
     <description>shiro-pac4j-spring-boot-start</description>
@@ -81,7 +81,7 @@
         <dependency>
             <groupId>org.linuxprobe</groupId>
             <artifactId>shiro-pac4j-base</artifactId>
-            <version>0.0.1.RS3</version>
+            <version>0.0.1.RS4</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>

@@ -23,6 +23,7 @@ import java.util.Map;
 @Getter
 @Setter
 public class ShiroPac4jConfigHolder {
+    private ShiroPac4jProperties shiroProperties;
     private SignatureConfiguration signatureConfiguration;
     private EncryptionConfiguration encryptionConfiguration;
     private Config config;

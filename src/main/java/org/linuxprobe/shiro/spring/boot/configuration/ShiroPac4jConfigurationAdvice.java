@@ -1,5 +1,6 @@
 package org.linuxprobe.shiro.spring.boot.configuration;
 
+import org.apache.shiro.realm.Realm;
 import org.linuxprobe.shiro.base.pac4j.engine.DefaultPac4jCallbackLogic;
 import org.linuxprobe.shiro.base.pac4j.engine.DefaultPac4jLogoutLogic;
 import org.linuxprobe.shiro.base.pac4j.engine.DefaultPac4jSecurityLogic;
@@ -21,6 +22,12 @@ import java.util.Map;
 
 public interface ShiroPac4jConfigurationAdvice {
     /**
+     * 初始化前
+     */
+    default void initBefore(ShiroPac4jProperties shiroPac4jProperties) {
+    }
+
+    /**
      * 自定义jwt生成
      *
      * @param configHolder shiro pac4j配置
@@ -40,6 +47,13 @@ public interface ShiroPac4jConfigurationAdvice {
         jwtAuthenticator.setEncryptionConfiguration(configHolder.getEncryptionConfiguration());
         jwtAuthenticator.setSessionTokenStore(configHolder.getSessionTokenStore());
         return jwtAuthenticator;
+    }
+
+    /**
+     * 自定义realm
+     */
+    default List<Realm> getRealms(ShiroPac4jConfigHolder configHolder) {
+        return new LinkedList<>();
     }
 
     /**
@@ -86,5 +100,11 @@ public interface ShiroPac4jConfigurationAdvice {
      */
     default SecurityLogic<Object, J2EContext> getSecurityLogic(ShiroPac4jConfigHolder configHolder) {
         return new DefaultPac4jSecurityLogic<>(configHolder.getSessionTokenStore());
+    }
+
+    /**
+     * 初始化后
+     */
+    default void initAfter(ShiroPac4jConfigHolder configHolder) {
     }
 }
