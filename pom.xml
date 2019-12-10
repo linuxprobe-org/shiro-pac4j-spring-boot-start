@@ -38,7 +38,7 @@
 
     <groupId>org.linuxprobe</groupId>
     <artifactId>shiro-pac4j-spring-boot-start</artifactId>
-    <version>0.0.1.RS4</version>
+    <version>0.0.1.RS5</version>
     <packaging>jar</packaging>
     <name>shiro-pac4j-spring-boot-start</name>
     <description>shiro-pac4j-spring-boot-start</description>
@@ -51,8 +51,8 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
-        <spring.vsersion>5.1.10.RELEASE</spring.vsersion>
-        <spring.boot.vsersion>2.1.9.RELEASE</spring.boot.vsersion>
+        <spring.vsersion>5.2.1.RELEASE</spring.vsersion>
+        <spring.boot.vsersion>2.2.1.RELEASE</spring.boot.vsersion>
     </properties>
 
     <dependencies>
@@ -68,10 +68,26 @@
             <version>1.8.0-beta4</version>
         </dependency>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.10</version>
+        </dependency>
+        <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>4.0.1</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.linuxprobe</groupId>
+            <artifactId>luava-servlet</artifactId>
+            <version>0.0.3.RELEASE</version>
+        </dependency>
+        <!-- shiro start -->
+        <dependency>
+            <groupId>org.linuxprobe</groupId>
+            <artifactId>luava-shiro-redis</artifactId>
+            <version>0.0.3.RELEASE</version>
         </dependency>
         <dependency>
             <groupId>org.apache.shiro</groupId>
@@ -79,10 +95,26 @@
             <version>1.4.2</version>
         </dependency>
         <dependency>
-            <groupId>org.linuxprobe</groupId>
-            <artifactId>shiro-pac4j-base</artifactId>
-            <version>0.0.1.RS4</version>
+            <groupId>io.buji</groupId>
+            <artifactId>buji-pac4j</artifactId>
+            <version>4.1.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.pac4j</groupId>
+            <artifactId>pac4j-jwt</artifactId>
+            <version>3.8.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.pac4j</groupId>
+            <artifactId>pac4j-http</artifactId>
+            <version>3.8.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.pac4j</groupId>
+            <artifactId>pac4j-oauth</artifactId>
+            <version>3.8.3</version>
+        </dependency>
+        <!-- shiro end -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-beans</artifactId>

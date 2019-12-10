@@ -6,33 +6,30 @@ import io.buji.pac4j.filter.LogoutFilter;
 import io.buji.pac4j.subject.Pac4jSubjectFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.mgt.DefaultSessionStorageEvaluator;
+import org.apache.shiro.mgt.DefaultSubjectDAO;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.realm.Realm;
 import org.apache.shiro.session.mgt.SessionManager;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
+import org.apache.shiro.subject.Subject;
+import org.apache.shiro.subject.SubjectContext;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.apache.shiro.web.servlet.SimpleCookie;
 import org.linuxprobe.luava.cache.impl.redis.RedisCache;
 import org.linuxprobe.luava.shiro.redis.cache.ShiroRedisCacheManager;
 import org.linuxprobe.luava.shiro.redis.session.ShiroRedisSessionDAO;
-import org.linuxprobe.shiro.base.filter.*;
-import org.linuxprobe.shiro.base.pac4j.authc.ClientAuthorizationInfo;
-import org.linuxprobe.shiro.base.pac4j.jwt.JwtGenerator;
-import org.linuxprobe.shiro.base.realm.Pac4jShiroRealm;
-import org.linuxprobe.shiro.base.session.DefaultSessionTokenStore;
-import org.linuxprobe.shiro.base.session.Pac4jShiroRedisSessionDAO;
-import org.linuxprobe.shiro.base.session.Pac4jWebSessionManager;
-import org.linuxprobe.shiro.base.session.SessionTokenStore;
+import org.linuxprobe.shiro.filter.*;
+import org.linuxprobe.shiro.pac4j.authc.ClientAuthorizationInfo;
+import org.linuxprobe.shiro.realm.Pac4jShiroRealm;
+import org.linuxprobe.shiro.session.DefaultSessionTokenStore;
+import org.linuxprobe.shiro.session.Pac4jShiroRedisSessionDAO;
+import org.linuxprobe.shiro.session.Pac4jWebSessionManager;
+import org.linuxprobe.shiro.session.SessionTokenStore;
 import org.pac4j.core.client.Clients;
 import org.pac4j.core.config.Config;
 import org.pac4j.core.engine.DefaultCallbackLogic;
-import org.pac4j.core.profile.CommonProfile;
-import org.pac4j.jwt.config.encryption.EncryptionConfiguration;
-import org.pac4j.jwt.config.encryption.SecretEncryptionConfiguration;
-import org.pac4j.jwt.config.signature.SecretSignatureConfiguration;
-import org.pac4j.jwt.config.signature.SignatureConfiguration;
-import org.pac4j.jwt.credentials.authenticator.JwtAuthenticator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -97,47 +94,39 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
         ShiroPac4jConfigurationAdvice configurationAdvice = this.getConfigurationAdvice();
         this.shiroPac4jConfigHolder = new ShiroPac4jConfigHolder();
         this.shiroPac4jConfigHolder.setShiroProperties(this.shiroProperties);
+        this.shiroPac4jConfigHolder.setRedisCache(this.redisCache);
         configurationAdvice.initBefore(this.shiroProperties);
-        // 1. 签名bean
-        SecretSignatureConfiguration secretSignatureConfiguration = new SecretSignatureConfiguration(this.shiroProperties.getJwtSecret());
-        this.shiroPac4jConfigHolder.setSignatureConfiguration(secretSignatureConfiguration);
-        // 2. 加密bean
-        SecretEncryptionConfiguration secretEncryptionConfiguration = new SecretEncryptionConfiguration(this.shiroProperties.getJwtSecret());
-        this.shiroPac4jConfigHolder.setEncryptionConfiguration(secretEncryptionConfiguration);
-        // 3. pac4j config bean
+        // 1. pac4j config bean
         Config config = new Config("/callback");
         config.setCallbackLogic(new DefaultCallbackLogic());
         config.setSessionStore(ShiroSessionStore.INSTANCE);
         if (this.shiroProperties.getMatchers() != null) {
             config.setMatchers(this.shiroProperties.getMatchers());
         }
-        //4. sessionTokenStore bean
-        SessionTokenStore sessionTokenStore = new DefaultSessionTokenStore(config, this.redisCache, this.shiroProperties.getSessionTimeout());
+        // 2. sessionTokenStore bean
+        SessionTokenStore sessionTokenStore = new DefaultSessionTokenStore(this.redisCache);
         this.shiroPac4jConfigHolder.setSessionTokenStore(sessionTokenStore);
-        // 5. Jwt生产bean
-        JwtGenerator<CommonProfile> jwtGenerator = configurationAdvice.getJwtGenerator(this.shiroPac4jConfigHolder);
-        this.shiroPac4jConfigHolder.setJwtGenerator(jwtGenerator);
-        // 6. jwt验证bean
-        JwtAuthenticator jwtAuthenticator = configurationAdvice.getJwtAuthenticator(this.shiroPac4jConfigHolder);
-        this.shiroPac4jConfigHolder.setJwtAuthenticator(jwtAuthenticator);
-        // 7. pac4j client
+        // 3. pac4j client
         Clients clients = new Clients();
         clients.setClients(configurationAdvice.getClients(this.shiroPac4jConfigHolder));
         config.setClients(clients);
         this.shiroPac4jConfigHolder.setClients(clients);
-        // 8. session dao bean
+        this.shiroPac4jConfigHolder.setConfig(config);
+        // 4. session dao bean
         ShiroRedisSessionDAO sessionDAO = new Pac4jShiroRedisSessionDAO(this.redisCache, sessionTokenStore);
         this.shiroPac4jConfigHolder.setSessionDAO(sessionDAO);
-        // 9. session manager
-        Pac4jWebSessionManager sessionManager = new Pac4jWebSessionManager(sessionTokenStore);
+        // 5. session manager
+        Pac4jWebSessionManager sessionManager = new Pac4jWebSessionManager(sessionTokenStore, config);
         sessionManager.setSessionDAO(sessionDAO);
         sessionManager.setGlobalSessionTimeout(this.shiroProperties.getSessionTimeout() * 1000);
+        // 是否启用会话调度
+        sessionManager.setSessionValidationSchedulerEnabled(this.shiroProperties.getEnableSession());
         SimpleCookie simpleCookie = new SimpleCookie();
         simpleCookie.setName("shrio_sesssion_id");
         simpleCookie.setPath("/");
         sessionManager.setSessionIdCookie(simpleCookie);
         this.shiroPac4jConfigHolder.setSessionManager(sessionManager);
-        // 11. securityManager bean
+        // 6. securityManager bean
         DefaultWebSecurityManager securityManager = new DefaultWebSecurityManager();
         List<Realm> realms = new ArrayList<>(3);
         realms.add(new Pac4jShiroRealm(this.clientAuthorizationInfo, this.shiroProperties.getCachePrefix()));
@@ -145,14 +134,25 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
         securityManager.setRealms(realms);
         securityManager.setSessionManager(sessionManager);
         securityManager.setCacheManager(new ShiroRedisCacheManager(this.redisCache));
-        securityManager.setSubjectFactory(new Pac4jSubjectFactory());
+        securityManager.setSubjectFactory(new Pac4jSubjectFactory() {
+            @Override
+            public Subject createSubject(SubjectContext context) {
+                // 是否创建session
+                context.setSessionCreationEnabled(ShiroPac4jAutoConfiguration.this.shiroProperties.getEnableSession());
+                return super.createSubject(context);
+            }
+        });
+        DefaultSubjectDAO subjectDAO = (DefaultSubjectDAO) securityManager.getSubjectDAO();
+        DefaultSessionStorageEvaluator sessionStorageEvaluator = (DefaultSessionStorageEvaluator) subjectDAO.getSessionStorageEvaluator();
+        // 是否启用session存储
+        sessionStorageEvaluator.setSessionStorageEnabled(this.shiroProperties.getEnableSession());
         SecurityUtils.setSecurityManager(securityManager);
         this.shiroPac4jConfigHolder.setSecurityManager(securityManager);
-        // 12 aop
+        // 7 aop
         AuthorizationAttributeSourceAdvisor authorizationAttributeSourceAdvisor = new AuthorizationAttributeSourceAdvisor();
         authorizationAttributeSourceAdvisor.setSecurityManager(securityManager);
         this.shiroPac4jConfigHolder.setAuthorizationAttributeSourceAdvisor(authorizationAttributeSourceAdvisor);
-        // 13. filter map 自定义shiro拦截器
+        // 8. filter map 自定义shiro拦截器
         Map<String, Filter> filters = new HashMap<>();
         this.shiroPac4jConfigHolder.setFilters(filters);
         filters.put(AuthcFilter.name, new AuthcFilter());
@@ -174,7 +174,7 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
         filters.put(HeartbeatRequestFilter.name, new HeartbeatRequestFilter());
         filters.put(RedirectionFilter.name, new RedirectionFilter(this.shiroProperties));
         filters.putAll(configurationAdvice.getFilter(this.shiroPac4jConfigHolder));
-        // 14. filter bean
+        // 9. filter bean
         ShiroFilterFactoryBean shiroFilterFactoryBean = new ShiroFilterFactoryBean();
         shiroFilterFactoryBean.setLoginUrl(this.shiroProperties.getLoginUrl());
         shiroFilterFactoryBean.setUnauthorizedUrl(null);
@@ -196,24 +196,6 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
         return this.redisCache;
     }
 
-    /**
-     * 加签配置
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public SignatureConfiguration signatureConfiguration() {
-        return this.shiroPac4jConfigHolder.getSignatureConfiguration();
-    }
-
-    /**
-     * 加密配置
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public EncryptionConfiguration encryptionConfiguration() {
-        return this.shiroPac4jConfigHolder.getEncryptionConfiguration();
-    }
-
     @Bean("pac4jConfig")
     @ConditionalOnMissingBean
     public Config pac4jConfig() {
@@ -227,24 +209,6 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
     @ConditionalOnMissingBean
     public SessionTokenStore sessionTokenStore() {
         return this.shiroPac4jConfigHolder.getSessionTokenStore();
-    }
-
-    /**
-     * jwt生成
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public JwtGenerator<CommonProfile> pac4jJwtGenerator() {
-        return this.shiroPac4jConfigHolder.getJwtGenerator();
-    }
-
-    /**
-     * jwt验证
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public JwtAuthenticator jwtAuthenticator() {
-        return this.shiroPac4jConfigHolder.getJwtAuthenticator();
     }
 
     @Bean("pac4jClients")

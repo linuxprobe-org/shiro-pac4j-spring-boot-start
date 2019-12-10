@@ -1,18 +1,14 @@
 package org.linuxprobe.shiro.spring.boot.configuration;
 
 import org.apache.shiro.realm.Realm;
-import org.linuxprobe.shiro.base.pac4j.engine.DefaultPac4jCallbackLogic;
-import org.linuxprobe.shiro.base.pac4j.engine.DefaultPac4jLogoutLogic;
-import org.linuxprobe.shiro.base.pac4j.engine.DefaultPac4jSecurityLogic;
-import org.linuxprobe.shiro.base.pac4j.jwt.Pac4jJwtAuthenticator;
-import org.linuxprobe.shiro.base.pac4j.jwt.Pac4jJwtGenerator;
+import org.linuxprobe.shiro.pac4j.engine.DefaultPac4jCallbackLogic;
+import org.linuxprobe.shiro.pac4j.engine.DefaultPac4jLogoutLogic;
+import org.linuxprobe.shiro.pac4j.engine.DefaultPac4jSecurityLogic;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.context.J2EContext;
 import org.pac4j.core.engine.CallbackLogic;
 import org.pac4j.core.engine.LogoutLogic;
 import org.pac4j.core.engine.SecurityLogic;
-import org.pac4j.core.profile.CommonProfile;
-import org.pac4j.jwt.credentials.authenticator.JwtAuthenticator;
 
 import javax.servlet.Filter;
 import java.util.HashMap;
@@ -25,28 +21,6 @@ public interface ShiroPac4jConfigurationAdvice {
      * 初始化前
      */
     default void initBefore(ShiroPac4jProperties shiroPac4jProperties) {
-    }
-
-    /**
-     * 自定义jwt生成
-     *
-     * @param configHolder shiro pac4j配置
-     */
-    default <U extends CommonProfile> Pac4jJwtGenerator<U> getJwtGenerator(ShiroPac4jConfigHolder configHolder) {
-        return new Pac4jJwtGenerator<U>(configHolder.getSignatureConfiguration(), configHolder.getEncryptionConfiguration(), configHolder.getSessionTokenStore());
-    }
-
-    /**
-     * 自定义jwt校验
-     *
-     * @param configHolder shiro pac4j配置
-     */
-    default JwtAuthenticator getJwtAuthenticator(ShiroPac4jConfigHolder configHolder) {
-        Pac4jJwtAuthenticator jwtAuthenticator = new Pac4jJwtAuthenticator();
-        jwtAuthenticator.setSignatureConfiguration(configHolder.getSignatureConfiguration());
-        jwtAuthenticator.setEncryptionConfiguration(configHolder.getEncryptionConfiguration());
-        jwtAuthenticator.setSessionTokenStore(configHolder.getSessionTokenStore());
-        return jwtAuthenticator;
     }
 
     /**
@@ -99,7 +73,7 @@ public interface ShiroPac4jConfigurationAdvice {
      * @param configHolder shiro pac4j配置
      */
     default SecurityLogic<Object, J2EContext> getSecurityLogic(ShiroPac4jConfigHolder configHolder) {
-        return new DefaultPac4jSecurityLogic<>(configHolder.getSessionTokenStore());
+        return new DefaultPac4jSecurityLogic<>(configHolder.getSessionTokenStore(), configHolder.getShiroProperties());
     }
 
     /**
