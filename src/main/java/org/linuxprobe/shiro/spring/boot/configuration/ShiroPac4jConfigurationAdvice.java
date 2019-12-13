@@ -100,7 +100,11 @@ public interface ShiroPac4jConfigurationAdvice {
                 if (message == null || message.isEmpty()) {
                     message = "服务器发生错误," + exception.getClass().getName();
                 }
-                HttpServletUtils.responseJson((HttpServletRequest) servletRequest, (HttpServletResponse) servletResponse, Result.fail(message));
+                if (HttpServletUtils.isAjax((HttpServletRequest) servletRequest)) {
+                    HttpServletUtils.responseJson((HttpServletRequest) servletRequest, (HttpServletResponse) servletResponse, Result.fail(message));
+                } else {
+                    throw new ServletException(exception.getMessage(), exception);
+                }
             }
         };
     }

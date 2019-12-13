@@ -49,13 +49,7 @@ public class ShiroRootFilter extends AbstractShiroFilter {
             if (this.exceptionHandler != null) {
                 this.exceptionHandler.onException(servletRequest, servletResponse, chain, ex);
             } else {
-                if (ex instanceof ServletException) {
-                    throw (ServletException) ex;
-                } else if (ex instanceof IOException) {
-                    throw (IOException) ex;
-                } else {
-                    throw new ServletException(ex);
-                }
+                throw new ServletException(ex.getMessage(), ex);
             }
         }
     }
