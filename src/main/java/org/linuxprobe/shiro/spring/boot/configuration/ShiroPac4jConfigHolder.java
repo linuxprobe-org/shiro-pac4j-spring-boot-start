@@ -5,7 +5,6 @@ import lombok.Setter;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.session.mgt.SessionManager;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
-import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.linuxprobe.luava.cache.impl.redis.RedisCache;
 import org.linuxprobe.luava.shiro.redis.session.ShiroRedisSessionDAO;
 import org.linuxprobe.shiro.session.SessionTokenStore;

@@ -1,6 +1,9 @@
 package org.linuxprobe.shiro.spring.boot.configuration;
 
 import org.apache.shiro.realm.Realm;
+import org.linuxprobe.luava.servlet.HttpServletUtils;
+import org.linuxprobe.shiro.data.Result;
+import org.linuxprobe.shiro.filter.ShiroRootFilter;
 import org.linuxprobe.shiro.pac4j.engine.DefaultPac4jCallbackLogic;
 import org.linuxprobe.shiro.pac4j.engine.DefaultPac4jLogoutLogic;
 import org.linuxprobe.shiro.pac4j.engine.DefaultPac4jSecurityLogic;
@@ -9,8 +12,13 @@ import org.pac4j.core.context.J2EContext;
 import org.pac4j.core.engine.CallbackLogic;
 import org.pac4j.core.engine.LogoutLogic;
 import org.pac4j.core.engine.SecurityLogic;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.servlet.Filter;
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -74,6 +82,27 @@ public interface ShiroPac4jConfigurationAdvice {
      */
     default SecurityLogic<Object, J2EContext> getSecurityLogic(ShiroPac4jConfigHolder configHolder) {
         return new DefaultPac4jSecurityLogic<>(configHolder.getSessionTokenStore(), configHolder.getShiroProperties());
+    }
+
+    /**
+     * 自定义shiro 拦截器异常处理
+     */
+    default ShiroRootFilter.ShiroFilterExceptionHandler getShiroFilterExceptionHandler(ShiroPac4jConfigHolder configHolder) {
+        return new ShiroRootFilter.ShiroFilterExceptionHandler() {
+            private final Logger logger = LoggerFactory.getLogger(ShiroPac4jConfigurationAdvice.class);
+
+            @Override
+            public void onException(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain chain, Exception exception) throws ServletException, IOException {
+                if (this.logger.isErrorEnabled()) {
+                    this.logger.error("", exception);
+                }
+                String message = exception.getMessage();
+                if (message == null || message.isEmpty()) {
+                    message = "服务器发生错误," + exception.getClass().getName();
+                }
+                HttpServletUtils.responseJson((HttpServletRequest) servletRequest, (HttpServletResponse) servletResponse, Result.fail(message));
+            }
+        };
     }
 
     /**

@@ -12,7 +12,6 @@ import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.realm.Realm;
 import org.apache.shiro.session.mgt.SessionManager;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
-import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.subject.SubjectContext;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
@@ -186,6 +185,7 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
         //拦截器链路给引用方配置
         shiroFilterFactoryBean.setFilterChainDefinitionMap(this.shiroProperties.getFilterChainDefinitions());
         shiroFilterFactoryBean.setLoginUrl(this.shiroProperties.getLoginUrl());
+        shiroFilterFactoryBean.setExceptionHandler(configurationAdvice.getShiroFilterExceptionHandler(this.shiroPac4jConfigHolder));
         this.shiroPac4jConfigHolder.setShiroFilterFactoryBean(shiroFilterFactoryBean);
         configurationAdvice.initAfter(this.shiroPac4jConfigHolder);
     }
@@ -274,6 +274,17 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
     public ShiroFilterFactoryBean shiroFilterFactoryBean() {
         return this.shiroPac4jConfigHolder.getShiroFilterFactoryBean();
     }
+
+//    @Bean("shiroFilterProxy")
+//    public FilterRegistrationBean<Filter> shiroFilterProxy() throws Exception {
+//        FilterRegistrationBean<Filter> filterRegistrationBean = new FilterRegistrationBean<>();
+//        filterRegistrationBean.setFilter((Filter) this.shiroPac4jConfigHolder.getShiroFilterFactoryBean().getObject());
+//        filterRegistrationBean.addUrlPatterns("/*");
+//        filterRegistrationBean.setName("shiroFilter");
+//        filterRegistrationBean.setOrder(Integer.MIN_VALUE);
+//        filterRegistrationBean.setEnabled(true);
+//        return filterRegistrationBean;
+//    }
 
     @Bean("shiroFilterProxy")
     public FilterRegistrationBean<Filter> shiroFilterProxy() throws Exception {
