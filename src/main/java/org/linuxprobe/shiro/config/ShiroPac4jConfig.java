@@ -19,7 +19,11 @@ public class ShiroPac4jConfig {
     /**
      * 会话过期时间,单位秒
      */
-    private int sessionTimeout = 60 * 60 * 2;
+    private long sessionTimeout = 60 * 60 * 2;
+    /**
+     * 用户授权信息缓存过期时间,单位秒
+     */
+    private long cacheTimeout = 120;
     /**
      * 是否启用调试模式，调试模型将关闭注解拦截
      */

@@ -87,7 +87,7 @@
         <dependency>
             <groupId>org.linuxprobe</groupId>
             <artifactId>luava-shiro-redis</artifactId>
-            <version>0.0.3.RELEASE</version>
+            <version>0.0.4.RELEASE</version>
         </dependency>
         <dependency>
             <groupId>org.apache.shiro</groupId>

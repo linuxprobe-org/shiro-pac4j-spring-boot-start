@@ -132,7 +132,7 @@ public class ShiroPac4jAutoConfiguration implements BeanFactoryAware {
         realms.addAll(configurationAdvice.getRealms(this.shiroPac4jConfigHolder));
         securityManager.setRealms(realms);
         securityManager.setSessionManager(sessionManager);
-        securityManager.setCacheManager(new ShiroRedisCacheManager(this.redisCache));
+        securityManager.setCacheManager(new ShiroRedisCacheManager(this.redisCache, this.shiroProperties.getCacheTimeout()));
         securityManager.setSubjectFactory(new Pac4jSubjectFactory() {
             @Override
             public Subject createSubject(SubjectContext context) {
