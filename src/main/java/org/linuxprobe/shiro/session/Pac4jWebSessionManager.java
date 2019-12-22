@@ -36,19 +36,24 @@ public class Pac4jWebSessionManager extends DefaultWebSessionManager {
     }
 
     private String getToken(HttpServletRequest request, HttpServletResponse response) {
-        J2EContext context = new J2EContext(request, response, ShiroSessionStore.INSTANCE);
-        List<Client> currentClients = this.clientFinder.find(this.config.getClients(), context, this.getClients());
-        if (currentClients != null && !currentClients.isEmpty()) {
-            for (Client currentClient : currentClients) {
-                if (currentClient instanceof DirectClient) {
-                    TokenCredentials credentials = (TokenCredentials) currentClient.getCredentials(context);
-                    if (credentials != null) {
-                        return credentials.getToken();
+        try {
+            J2EContext context = new J2EContext(request, response, ShiroSessionStore.INSTANCE);
+            List<Client> currentClients = this.clientFinder.find(this.config.getClients(), context, this.getClients());
+            if (currentClients != null && !currentClients.isEmpty()) {
+                for (Client currentClient : currentClients) {
+                    if (currentClient instanceof DirectClient) {
+                        TokenCredentials credentials = (TokenCredentials) currentClient.getCredentials(context);
+                        if (credentials != null) {
+                            return credentials.getToken();
+                        }
                     }
                 }
             }
+            return null;
         }
-        return null;
+        catch (Exception e){
+            return null;
+        }
     }
 
     @Override
